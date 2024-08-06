@@ -20,7 +20,7 @@ namespace MultiplayerChat.UI.Lobby
 {
     internal class QuickChatModal : MonoBehaviour, IInitializable, IDisposable
     {
-        [Inject] private readonly ChatManager _chatManager;
+		[Inject] private readonly ChatManager _chatManager;
         [Inject] private readonly QuickChatOptions _quickChatOptions;
 
         [UIComponent("Modal")] private ModalView? _modal;
@@ -32,7 +32,7 @@ namespace MultiplayerChat.UI.Lobby
         private string _currentMenu = RootMenu;
         private bool InSubMenu => _currentMenu != RootMenu;
 
-        private string[] ButtonTexts => _quickChatOptions.Options.TryGetValue(_currentMenu, out var texts) ? texts : Array.Empty<string>();
+        private string[] ButtonTexts => _quickChatOptions.Options.TryGetValue(_currentMenu, out var texts) ? texts : [];
 
         public void Initialize() => BeatSaberMarkupLanguage.BSMLParser.instance.Parse(GetEmbeddedString("MultiplayerChat.UI.Lobby.QuickChatModal.bsml"), gameObject, this);
 
@@ -56,8 +56,8 @@ namespace MultiplayerChat.UI.Lobby
         [UIAction("#post-parse")]
         void PostParse()
         {
-            // add our event
-            _modal!.blockerClickedEvent += HandleBlockerClicked;
+		   // add our event
+		   _modal!.blockerClickedEvent += HandleBlockerClicked;
 
             // change the background sprite to be an octagon
             var bg = _modal.GetComponentInChildren<ImageView>(true);
