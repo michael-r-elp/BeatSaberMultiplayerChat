@@ -16,20 +16,34 @@ namespace MultiplayerChat.Models
         const string QuickChatOptionsPath = "UserData/MultiplayerChat/quickchat.json";
 
         public IReadOnlyDictionary<string, string[]> Options => _options;
-        private Dictionary<string, string[]> _options = new();
+        private Dictionary<string, string[]> _options = [];
 
         public void Initialize()
         {
-            if (!File.Exists(QuickChatOptionsPath)) WriteOutDefault();
+	        if (!File.Exists(QuickChatOptionsPath) || !TryReadConfig())
+	        {
+		        WriteOutDefault();
+		        TryReadConfig();
+			}
 
-            using (var fstream = new FileStream(QuickChatOptionsPath, FileMode.Open))
-            {
-                using (var reader = new StreamReader(fstream))
-                    _options = JsonConvert.DeserializeObject<Dictionary<string, string[]>>(reader.ReadToEnd());
-            }
         }
 
-        private void WriteOutDefault()
+        private bool TryReadConfig()
+        {
+	        using (var fstream = new FileStream(QuickChatOptionsPath, FileMode.Open))
+	        {
+		        using (var reader = new StreamReader(fstream))
+		        {
+			        var options = JsonConvert.DeserializeObject<Dictionary<string, string[]>>(reader.ReadToEnd());
+			        if (options != null)
+				        _options = options;
+			        else return false;
+		        }
+	        }
+	        return true;
+        }
+
+		private void WriteOutDefault()
         {
             var dir = Path.GetDirectoryName(QuickChatOptionsPath);
             if (!Directory.Exists(Path.GetDirectoryName(QuickChatOptionsPath)))
