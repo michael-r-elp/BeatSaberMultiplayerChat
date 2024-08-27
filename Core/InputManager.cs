@@ -24,7 +24,7 @@ public class InputManager : MonoBehaviour, IInitializable, IDisposable
     private bool _triggerConditionActive;
     private bool _debugKeyIsDown;
 
-    private readonly HapticPresetSO _hapticPulsePreset;
+    private HapticPresetSO _hapticPulsePreset;
 
     private bool _testMode;
     /// <summary>
@@ -44,11 +44,10 @@ public class InputManager : MonoBehaviour, IInitializable, IDisposable
     public event Action? DeactivatedEvent;
     public event Action? TestModeChangedEvent;
 
-    public InputManager()
+    public void Awake()
     {
         _hapticPulsePreset = CreateHapticPreset();
     }
-
     public void Initialize()
     {
         _leftController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
