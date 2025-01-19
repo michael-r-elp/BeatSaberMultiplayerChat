@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using MultiplayerChat.Config;
 using SiraUtil.Logging;
 using UnityEngine;
@@ -137,7 +138,7 @@ public class MicrophoneManager : MonoBehaviour, IInitializable, IDisposable
             deviceName = null;
         
         if (IsCapturing)
-            StopCapture();
+            Task.Run(StopCapture); // Hacky but somehow works?
 
         if (deviceName == "None")
         {
@@ -186,13 +187,12 @@ public class MicrophoneManager : MonoBehaviour, IInitializable, IDisposable
 
         var recordingFreq = GetRecordingFrequency();
 
-        Microphone.End(SelectedDeviceName);
+        //Microphone.End(SelectedDeviceName);
         _captureClip = Microphone.Start(SelectedDeviceName, true, 1, recordingFreq);
-
         _micBufferPos = 0;
 
         if (_micBuffer == null || _micBuffer.Length != recordingFreq)
-            _micBuffer = new float[recordingFreq];
+	        _micBuffer = new float[recordingFreq];
 
         IsCapturing = true;
     }

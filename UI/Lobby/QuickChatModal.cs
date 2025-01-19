@@ -34,7 +34,7 @@ namespace MultiplayerChat.UI.Lobby
 
         private string[] ButtonTexts => _quickChatOptions.Options.TryGetValue(_currentMenu, out var texts) ? texts : [];
 
-        public void Initialize() => BeatSaberMarkupLanguage.BSMLParser.instance.Parse(GetEmbeddedString("MultiplayerChat.UI.Lobby.QuickChatModal.bsml"), gameObject, this);
+        public void Initialize() => BeatSaberMarkupLanguage.BSMLParser.Instance.Parse(GetEmbeddedString("MultiplayerChat.UI.Lobby.QuickChatModal.bsml"), gameObject, this);
 
         public void Dispose()
         {

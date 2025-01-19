@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using BeatSaber.AvatarCore;
 using IPA.Utilities;
 using MultiplayerChat.Config;
@@ -106,7 +107,7 @@ public class VoiceManager : MonoBehaviour, IInitializable, IDisposable
         _multiplayerSession.disconnectedEvent -= HandleSessionDisconnected;
 
         if (_microphoneManager.IsCapturing)
-            _microphoneManager.StopCapture();
+            Task.Run(_microphoneManager.StopCapture); // Hacky but somehow works?
 
         _microphoneManager.FragmentReadyEvent -= HandleMicrophoneFragment;
         _microphoneManager.CaptureEndEvent -= HandleMicrophoneEnd;
@@ -310,9 +311,9 @@ public class VoiceManager : MonoBehaviour, IInitializable, IDisposable
             return true;
 
         IsTransmitting = true;
-        _microphoneManager.StartCapture();
+        Task.Run(_microphoneManager.StartCapture); // Hacky but somehow works?
 
-        _chatManager.SetLocalPlayerIsSpeaking(true);
+		_chatManager.SetLocalPlayerIsSpeaking(true);
         StartedTransmittingEvent?.Invoke();
         return true;
     }
@@ -322,8 +323,8 @@ public class VoiceManager : MonoBehaviour, IInitializable, IDisposable
         if (!IsTransmitting)
             return true;
 
-        _microphoneManager.StopCapture();
-        IsTransmitting = false;
+        Task.Run(_microphoneManager.StopCapture); // Hacky but somehow works?
+		IsTransmitting = false;
 
         if (_multiplayerSession.isConnected)
         {
@@ -377,14 +378,14 @@ public class VoiceManager : MonoBehaviour, IInitializable, IDisposable
         SetupLoopback();
 
         IsLoopbackTesting = true;
-        _microphoneManager.StartCapture();
-    }
+        Task.Run(_microphoneManager.StartCapture); // Hacky but somehow works?
+	}
 
     public void StopLoopbackTest()
     {
-        _microphoneManager.StopCapture();
+        Task.Run(_microphoneManager.StopCapture); // Hacky but somehow works?
 
-        _loopbackVoicePlayer.StopImmediate();
+		_loopbackVoicePlayer.StopImmediate();
 
         if (!IsLoopbackTesting)
             return;
