@@ -1,4 +1,5 @@
-﻿using MultiplayerChat.Core;
+﻿using MultiplayerChat.Config;
+using MultiplayerChat.Core;
 using MultiplayerChat.UI.Hud;
 using Zenject;
 
@@ -17,5 +18,8 @@ public class MpcMultiplayerInstaller : Installer
         
         // HUD
         Container.BindInterfacesAndSelfTo<HudVoiceIndicator>().FromNewComponentOnNewGameObject().AsSingle();
-    }
+
+        // Song Start Callback
+        Container.BindInterfacesAndSelfTo<SongStartManager>().AsSingle();
+	}
 }

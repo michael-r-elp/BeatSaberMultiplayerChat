@@ -24,6 +24,8 @@ public class InputManager : MonoBehaviour, IInitializable, IDisposable
     private bool _triggerConditionActive;
     private bool _debugKeyIsDown;
 
+    internal bool _isSongPlaying;
+
     private HapticPresetSO _hapticPulsePreset;
 
     private bool _testMode;
@@ -256,6 +258,8 @@ public class InputManager : MonoBehaviour, IInitializable, IDisposable
 
     private bool CheckTriggerCondition()
     {
+	    if (_isSongPlaying) return false;
+
         if (_config.DebugKeyboardMicActivation && _debugKeyIsDown)
             return true;
 
