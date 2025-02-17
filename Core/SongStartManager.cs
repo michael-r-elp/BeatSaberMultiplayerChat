@@ -4,14 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MultiplayerChat.Core;
 using SiraUtil.Affinity;
 using Zenject;
 
-namespace MultiplayerChat.Config
+namespace MultiplayerChat.Core
 {
 	//public class SongStartManager : IAffinity
-	public class SongStartManager : IInitializable
+	public class SongStartManager : IInitializable, IDisposable
 	{
 		[Inject] private readonly InputManager _inputManager = null!;
 		[Inject] private readonly MultiplayerController? _multiplayerController = null;
@@ -20,6 +19,12 @@ namespace MultiplayerChat.Config
 		{
 			if (_multiplayerController != null)
 				_multiplayerController.stateChangedEvent += OnStateChanged;
+		}
+
+		public void Dispose()
+		{
+			if (_multiplayerController != null)
+				_multiplayerController.stateChangedEvent -= OnStateChanged;
 		}
 
 		public void OnStateChanged(MultiplayerController.State state)

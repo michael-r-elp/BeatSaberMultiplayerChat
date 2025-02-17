@@ -1,5 +1,4 @@
-﻿using MultiplayerChat.Config;
-using MultiplayerChat.Core;
+﻿using MultiplayerChat.Core;
 using MultiplayerChat.UI.Hud;
 using Zenject;
 
