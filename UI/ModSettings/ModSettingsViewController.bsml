@@ -7,9 +7,9 @@
         <tab tab-name="Voice Chat" tags="tabs">
             <vertical child-control-height='false' spacing="1" pad-top="1">
 
-                <checkbox-setting id="ToggleVoice" text="Enable voice chat" value="EnableVoiceChat"
+                <checkbox-setting id="ToggleVoice" text="Enable voice chat (Alpha)" value="EnableVoiceChat"
                     bind-value="true" apply-on-change="true"
-                    hover-hint="Globally enable/disable all voice chat functionality"/>
+                    hover-hint="Globally enable/disable all voice chat functionality (Alpha Feature)"/>
 
                 <dropdown-list-setting id="DropdownMic" text="Microphone" options="MicrophoneOptions"
                     value="RecordingDevice" apply-on-change="true"
