@@ -41,7 +41,7 @@ public class PlayerVoicePlayer : IDisposable
     /// </summary>
     public event EventHandler? StartBufferingEvent;
     /// <summary>
-    /// This event is raised when buffering is complete and playback begins. 
+    /// This event is raised when buffering is complete and playback begins.
     /// </summary>
     public event EventHandler? StartPlaybackEvent;
     /// <summary>
@@ -233,6 +233,15 @@ public class PlayerVoicePlayer : IDisposable
         {
             var peekSampleCount = _streamBuffer.Peek(_playbackBuffer!, 0, ClipFeedSize);
 
+            _bufferPos += peekSampleCount;
+            if (_bufferPos >= ClipSampleSize)
+                _bufferIterations++;
+            _bufferPos %= ClipSampleSize;
+
+            if (playbackPos < _lastPlaybackPos)
+                _playbackIterations++;
+            _lastPlaybackPos = playbackPos;
+
             if (peekSampleCount == 0)
             {
                 _havePendingFragments = false;
@@ -246,6 +255,8 @@ public class PlayerVoicePlayer : IDisposable
                 var absPlaybackPos = GetAbsoluteSamples(_playbackIterations, playbackPos);
                 var absBufferPos = GetAbsoluteSamples(_bufferIterations, _bufferPos);
 
+                //Console.WriteLine($"play: {absPlaybackPos} it: {_playbackIterations}, buff: {absBufferPos} it: {_bufferIterations}");
+
                 if ((absPlaybackPos + ClipFeedSize) <= absBufferPos)
                     return;
                 
@@ -254,7 +265,7 @@ public class PlayerVoicePlayer : IDisposable
                 
                 if (++_deadFrames < 5)
                     return;
-                
+
                 StopImmediate();
                 return;
             }
@@ -263,15 +274,6 @@ public class PlayerVoicePlayer : IDisposable
 
             _audioClip.SetData(_playbackBuffer, _bufferPos);
             
-            _bufferPos += peekSampleCount;
-            if (_bufferPos >= ClipSampleSize)
-                _bufferIterations++;
-            _bufferPos %= ClipSampleSize;
-            
-            if (playbackPos < _lastPlaybackPos)
-                _playbackIterations++;
-            _lastPlaybackPos = playbackPos;
-
             _deadFrames = 0;
         }
     }

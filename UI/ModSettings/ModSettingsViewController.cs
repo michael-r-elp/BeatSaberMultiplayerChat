@@ -147,7 +147,12 @@ public class ModSettingsViewController : BSMLAutomaticViewController
         // Voice
         _toggleVoice.Interactable = !_voiceManager.IsLoopbackTesting;
         _dropdownMic.Interactable = EnableVoiceChat && !_voiceManager.IsLoopbackTesting;
-        _sliderMicGain.Interactable = EnableVoiceChat;
+
+        //BSML bug, fixed in later versions
+        //_sliderMicGain.Interactable = EnableVoiceChat;
+        ((TextSlider)_sliderMicGain.Slider).interactable = EnableVoiceChat;
+        
+        
         _dropdownActivation.Interactable = EnableVoiceChat && !_voiceManager.IsLoopbackTesting && _microphoneManager.HaveSelectedDevice;
         _dropdownKeybind.Interactable = EnableVoiceChat && !_voiceManager.IsLoopbackTesting && _microphoneManager.HaveSelectedDevice;
         _dropdownController.Interactable = EnableVoiceChat && !_voiceManager.IsLoopbackTesting && _microphoneManager.HaveSelectedDevice;
@@ -195,10 +200,17 @@ public class ModSettingsViewController : BSMLAutomaticViewController
 
         var canSetHudOptions = EnableVoiceChat && EnableHud; 
         
-        _sliderHudOpacity.Interactable = canSetHudOptions;
-        _sliderHudOffsetCamX.Interactable = canSetHudOptions;
-        _sliderHudOffsetCamY.Interactable = canSetHudOptions;
-        _sliderHudOffsetCamZ.Interactable = canSetHudOptions;
+        //BSML bug, fixed in later versions
+        //_sliderHudOpacity.Interactable = canSetHudOptions;
+        //_sliderHudOffsetCamX.Interactable = canSetHudOptions;
+        //_sliderHudOffsetCamY.Interactable = canSetHudOptions;
+        //_sliderHudOffsetCamZ.Interactable = canSetHudOptions;
+
+        ((TextSlider)_sliderHudOpacity.Slider).interactable = canSetHudOptions;
+        ((TextSlider)_sliderHudOffsetCamX.Slider).interactable = canSetHudOptions;
+        ((TextSlider)_sliderHudOffsetCamY.Slider).interactable = canSetHudOptions;
+        ((TextSlider)_sliderHudOffsetCamZ.Slider).interactable = canSetHudOptions;
+
         _btnResetHudOffset.interactable = canSetHudOptions;
     }
 
