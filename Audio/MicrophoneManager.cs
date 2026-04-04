@@ -85,8 +85,8 @@ public class MicrophoneManager : MonoBehaviour, IInitializable, IDisposable
             {
                 Array.Copy(_micBuffer, _micBufferPos, _fragmentBuffer, 0, SamplesPerFragment);
             }
-            
-            FragmentReadyEvent?.Invoke(_fragmentBuffer, _captureClip.frequency);
+            if(FragmentReadyEvent != null && _captureClip != null)
+                FragmentReadyEvent?.Invoke(_fragmentBuffer, _captureClip.frequency);
 
             _micBufferPos += SamplesPerFragment;
             

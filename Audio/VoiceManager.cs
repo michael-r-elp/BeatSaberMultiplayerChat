@@ -214,8 +214,6 @@ public class VoiceManager : MonoBehaviour, IInitializable, IDisposable
 
     private void HandleMicrophoneEnd()
     {
-        _loopbackVoicePlayer.StopImmediate();
-
         Array.Clear(_encodeSampleBuffer, 0, _encodeSampleBuffer.Length);
         Array.Clear(_encodeOutputBuffer, 0, _encodeOutputBuffer.Length);
     }
@@ -384,8 +382,6 @@ public class VoiceManager : MonoBehaviour, IInitializable, IDisposable
     public void StopLoopbackTest()
     {
         Task.Run(_microphoneManager.StopCapture); // Hacky but somehow works?
-
-		_loopbackVoicePlayer.StopImmediate();
 
         if (!IsLoopbackTesting)
             return;
