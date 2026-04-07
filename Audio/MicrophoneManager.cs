@@ -33,6 +33,9 @@ public class MicrophoneManager : MonoBehaviour, IInitializable, IDisposable
     public event Action<float[], int>? FragmentReadyEvent;
     public event Action? CaptureEndEvent;
 
+    private object _mic_access_lock = new();
+    private bool _mic_is_toggling = false;
+
     public MicrophoneManager()
     {
         _micBufferPos = 0;
@@ -58,41 +61,50 @@ public class MicrophoneManager : MonoBehaviour, IInitializable, IDisposable
 
     public void Update()
     {
-        if (!IsCapturing || _captureClip is null || _micBuffer is null)
+        //This small check here stops the main thread from hanging if the _mic_access_lock is currently in use.
+        //Lock exists so that Mic doesnt cause hard crash if accessed while already being accessed.
+        //Start and stop are in Task.Runs to prevent main thread from hanging while mic is being started.
+        if (_mic_is_toggling || !IsCapturing || _captureClip is null || _micBuffer is null)
             return;
 
-        // Get mic position (in samples)
-        var micPosCurrent = Microphone.GetPosition(SelectedDeviceName);
-
-        if (micPosCurrent < 0 || _micBufferPos == micPosCurrent)
-            return;
-
-        // Get raw wave samples from the mic capture into our buffer
-        if (!_captureClip.GetData(_micBuffer, 0))
-            return;
-
-        // We'll invoke OnAudioReady each time we can fill the fragment buffer
-        while (GetLoopDataLength(_micBuffer.Length, _micBufferPos, micPosCurrent) > SamplesPerFragment)
+        lock (_mic_access_lock)
         {
-            var remain = _micBuffer.Length - _micBufferPos;
-            
-            if (remain < SamplesPerFragment)
-            {
-                Array.Copy(_micBuffer, _micBufferPos, _fragmentBuffer, 0, remain);
-                Array.Copy(_micBuffer, 0, _fragmentBuffer, remain, SamplesPerFragment - remain);
-            }
-            else
-            {
-                Array.Copy(_micBuffer, _micBufferPos, _fragmentBuffer, 0, SamplesPerFragment);
-            }
-            if(FragmentReadyEvent != null && _captureClip != null)
-                FragmentReadyEvent?.Invoke(_fragmentBuffer, _captureClip.frequency);
+            if (!Microphone.IsRecording(SelectedDeviceName))
+                return;
 
-            _micBufferPos += SamplesPerFragment;
-            
-            if (_micBufferPos > _micBuffer.Length)
+            // Get mic position (in samples)
+            var micPosCurrent = Microphone.GetPosition(SelectedDeviceName);
+
+            if (micPosCurrent < 0 || _micBufferPos == micPosCurrent)
+                return;
+
+            // Get raw wave samples from the mic capture into our buffer
+            if (!_captureClip.GetData(_micBuffer, 0))
+                return;
+
+            // We'll invoke OnAudioReady each time we can fill the fragment buffer
+            while (GetLoopDataLength(_micBuffer.Length, _micBufferPos, micPosCurrent) > SamplesPerFragment)
             {
-                _micBufferPos -= _micBuffer.Length;
+                var remain = _micBuffer.Length - _micBufferPos;
+
+                if (remain < SamplesPerFragment)
+                {
+                    Array.Copy(_micBuffer, _micBufferPos, _fragmentBuffer, 0, remain);
+                    Array.Copy(_micBuffer, 0, _fragmentBuffer, remain, SamplesPerFragment - remain);
+                }
+                else
+                {
+                    Array.Copy(_micBuffer, _micBufferPos, _fragmentBuffer, 0, SamplesPerFragment);
+                }
+                if (FragmentReadyEvent != null && _captureClip != null)
+                    FragmentReadyEvent?.Invoke(_fragmentBuffer, _captureClip.frequency);
+
+                _micBufferPos += SamplesPerFragment;
+
+                if (_micBufferPos > _micBuffer.Length)
+                {
+                    _micBufferPos -= _micBuffer.Length;
+                }
             }
         }
     }
@@ -138,7 +150,7 @@ public class MicrophoneManager : MonoBehaviour, IInitializable, IDisposable
             deviceName = null;
         
         if (IsCapturing)
-            Task.Run(StopCapture); // Hacky but somehow works?
+            InternalStopCapture(); //Has to call the internal version so that this is done synchronously. The old mic will not get disabled correctly if the SelectedDeviceName is changed before the task can run.
 
         if (deviceName == "None")
         {
@@ -180,45 +192,76 @@ public class MicrophoneManager : MonoBehaviour, IInitializable, IDisposable
 
     public void StartCapture()
     {
-        StopCapture();
-
-        if (!HaveSelectedDevice)
-            throw new InvalidOperationException("Cannot start capture without a selected device");
-
-        var recordingFreq = GetRecordingFrequency();
-
-        //Microphone.End(SelectedDeviceName);
-        _captureClip = Microphone.Start(SelectedDeviceName, true, 1, recordingFreq);
-        _micBufferPos = 0;
-
-        if (_micBuffer == null || _micBuffer.Length != recordingFreq)
-	        _micBuffer = new float[recordingFreq];
-
-        IsCapturing = true;
+        Task.Run(InternalStartCapture);
     }
 
     public void StopCapture()
     {
-        if (!IsCapturing)
-            return;
-        
-        Microphone.End(SelectedDeviceName);
-        
-        IsCapturing = false;
+        Task.Run(InternalStopCapture);
+    }
 
-        if (_captureClip != null)
+    private void InternalStartCapture()
+    {
+        InternalStopCapture();
+
+        lock (_mic_access_lock)
         {
-            Destroy(_captureClip);
-            _captureClip = null;
-        }
+            _mic_is_toggling = true;
+            if (!HaveSelectedDevice)
+            {
+                _mic_is_toggling = false;
+                throw new InvalidOperationException("Cannot start capture without a selected device");
+            }
 
-        _micBufferPos = 0;
-        
-        Array.Clear(_fragmentBuffer, 0, _fragmentBuffer.Length);
-        
-        if (_micBuffer != null)
-            Array.Clear(_micBuffer, 0, _micBuffer.Length);
-        
+            var recordingFreq = GetRecordingFrequency();
+
+            try
+            {
+                _captureClip = Microphone.Start(SelectedDeviceName, true, 1, recordingFreq);
+            }
+            finally { }
+            _micBufferPos = 0;
+
+            if (_micBuffer == null || _micBuffer.Length != recordingFreq)
+                _micBuffer = new float[recordingFreq];
+
+            IsCapturing = true;
+            _mic_is_toggling = false;
+        }
+    }
+
+
+    private void InternalStopCapture()
+    {
+        lock (_mic_access_lock)
+        {
+            _mic_is_toggling = true;
+            if (!IsCapturing)
+            {
+                _mic_is_toggling = false;
+                return;
+            }
+
+            if (Microphone.IsRecording(SelectedDeviceName))
+                Microphone.End(SelectedDeviceName);
+
+            IsCapturing = false;
+
+            if (_captureClip != null)
+            {
+                Destroy(_captureClip);
+                _captureClip = null;
+            }
+
+            _micBufferPos = 0;
+
+            Array.Clear(_fragmentBuffer, 0, _fragmentBuffer.Length);
+
+            if (_micBuffer != null)
+                Array.Clear(_micBuffer, 0, _micBuffer.Length);
+
+            _mic_is_toggling = false;
+        }
         CaptureEndEvent?.Invoke();
     }
 
